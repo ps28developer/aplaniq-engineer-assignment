@@ -1,5 +1,11 @@
 # NOTES: Venue Shortlist
 
+**Quick map:** run it with `cargo run -- venues.json` and test it with `cargo test` (details
+and the full folder structure are in [README.md](README.md)). The plan lives in
+[.planning/](.planning/): rules in `REQUIREMENTS.md`, phase briefs in `phases/*/`, the
+hand-computed test oracle in `phases/02-evaluate/EXPECTED.md`, my review in
+`phases/03-review/03-SUMMARY.md`.
+
 ## 1. Spec and assumptions
 
 **What the client said:** a partner day, mid-March, Thursday ideal and Tuesday OK. 80 people,

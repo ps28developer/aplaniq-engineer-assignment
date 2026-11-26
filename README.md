@@ -43,7 +43,32 @@ The unit tests sit next to each module. `tests/shortlist.rs` runs the real `venu
 and asserts the bucket of every venue in both scenarios. The expected values come from a
 hand-computed table in `.planning/phases/02-evaluate/EXPECTED.md`.
 
-## Layout
+## Folder structure
+```
+.
+├── Aplaniq_Engineer_Assignment.pdf   the original brief
+├── venues.json                       the messy source data (30 records, 3 duplicate pairs)
+├── Cargo.toml / Cargo.lock           crate config (deps: serde, serde_json)
+├── README.md                         how to build, run and test (this file)
+├── NOTES.md                          spec, assumptions, decisions, review, next steps, time
+├── src/                              the application (see module table below)
+├── tests/
+│   └── shortlist.rs                  end-to-end test on the real venues.json
+└── .planning/                        the plan, written BEFORE the code (GSD artifacts)
+    ├── PROJECT.md                    goal, client, scope
+    ├── REQUIREMENTS.md               every rule numbered and frozen; the agents' spec
+    ├── ROADMAP.md                    the three phases
+    ├── STATE.md                      progress and decisions log
+    └── phases/
+        ├── 01-normalize/01-PLAN.md   plan for loading and normalizing (agent brief)
+        ├── 02-evaluate/02-PLAN.md    plan for dedupe, evaluate, score, report, CLI
+        ├── 02-evaluate/EXPECTED.md   hand-computed expected bucket for all 30 records
+        └── 03-review/03-SUMMARY.md   review of the agents' output
+```
+**Where to start reading:** `NOTES.md` (decisions and review) first, then
+`.planning/REQUIREMENTS.md` (the rules), then `src/`.
+
+## Modules in `src/`
 | Module | Responsibility |
 |---|---|
 | `raw.rs` | serde types that mirror the JSON, including its polymorphic fields |
