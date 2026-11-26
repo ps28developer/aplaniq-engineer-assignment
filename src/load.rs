@@ -80,7 +80,7 @@ pub fn parse_venues(json: &str) -> Result<Loaded, LoadError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Capacity, Money, PriceInfo};
+    use crate::model::{Capacity, Money};
 
     #[test]
     fn malformed_records_are_warnings_not_errors() {
@@ -124,16 +124,12 @@ mod tests {
                 .find(|v| v.ids[0] == id)
                 .unwrap_or_else(|| panic!("{id} missing"))
         };
-        match &venue("v008").price {
-            PriceInfo::Known(price) => assert_eq!(price.amount, Money::from_euros(7900)),
-            other => panic!("v008 price: {other:?}"),
-        }
+        assert_eq!(venue("v008").prices[0].amount, Money::from_euros(7900));
         assert_eq!(venue("v027").capacity, Capacity::Unknown);
+        assert!(venue("v029").prices.is_empty());
         assert_eq!(
-            venue("v029").price,
-            PriceInfo::Unknown {
-                reason: "priced in USD, no FX conversion".to_string()
-            }
+            venue("v029").price_unknown_reason.as_deref(),
+            Some("priced in USD, no FX conversion")
         );
     }
 }

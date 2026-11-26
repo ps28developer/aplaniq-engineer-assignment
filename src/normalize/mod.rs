@@ -5,7 +5,7 @@ pub mod availability;
 pub mod price;
 
 use crate::model::{
-    Accessibility, BreakoutRooms, Capacity, Catering, Daylight, Venue, WalkMinutes, Wifi,
+    Accessibility, BreakoutRooms, Capacity, Catering, Daylight, PriceInfo, Venue, WalkMinutes, Wifi,
 };
 use crate::raw::{RawCapacity, RawCount, RawFlag, RawVenue};
 
@@ -26,6 +26,10 @@ pub fn normalize_venue(raw: RawVenue) -> Result<Venue, String> {
     notes.extend(breakout_note);
     let (price, price_risks) = price::parse_price(raw.price.as_ref());
     risks.extend(price_risks);
+    let (prices, price_unknown_reason) = match price {
+        PriceInfo::Known(price) => (vec![price], None),
+        PriceInfo::Unknown { reason } => (Vec::new(), Some(reason)),
+    };
 
     Ok(Venue {
         ids: vec![id],
@@ -35,7 +39,8 @@ pub fn normalize_venue(raw: RawVenue) -> Result<Venue, String> {
         walk_minutes: parse_walk_minutes(raw.walk_minutes.as_ref()),
         capacity,
         breakout_rooms,
-        price,
+        prices,
+        price_unknown_reason,
         catering: parse_catering(raw.catering_included.as_ref()),
         wheelchair: parse_wheelchair(raw.wheelchair_accessible.as_ref()),
         daylight: parse_daylight(raw.daylight.as_deref()),
@@ -43,6 +48,7 @@ pub fn normalize_venue(raw: RawVenue) -> Result<Venue, String> {
         availability: availability::parse_availability(raw.availability.as_deref()),
         notes,
         risks,
+        disputed: Vec::new(),
     })
 }
 
@@ -250,7 +256,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
-    use crate::model::{Availability, PriceInfo};
+    use crate::model::Availability;
 
     fn text(s: &str) -> RawCount {
         RawCount::Text(s.to_string())
@@ -463,7 +469,11 @@ mod tests {
         assert_eq!(venue.city, None);
         assert_eq!(venue.capacity, Capacity::Unknown);
         assert_eq!(venue.walk_minutes, WalkMinutes::Unknown);
-        assert!(matches!(venue.price, PriceInfo::Unknown { .. }));
+        assert!(venue.prices.is_empty());
+        assert_eq!(
+            venue.price_unknown_reason.as_deref(),
+            Some("price not stated")
+        );
         assert_eq!(venue.availability, Availability::Unknown);
         assert!(venue.notes.is_empty());
     }

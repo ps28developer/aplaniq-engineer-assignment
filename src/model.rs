@@ -23,9 +23,21 @@ impl Money {
         self.0
     }
 
+    pub const fn times(self, factor: u32) -> Money {
+        Money(self.0 * factor as i64)
+    }
+
     /// Converts an excl.-VAT amount to incl. VAT, rounding half a cent up.
     pub fn add_vat(self) -> Money {
         Money((self.0 * (100 + VAT_RATE_PERCENT) + 50).div_euclid(100))
+    }
+}
+
+impl std::ops::Add for Money {
+    type Output = Money;
+
+    fn add(self, other: Money) -> Money {
+        Money(self.0 + other.0)
     }
 }
 
@@ -141,7 +153,12 @@ pub struct Venue {
     pub walk_minutes: WalkMinutes,
     pub capacity: Capacity,
     pub breakout_rooms: BreakoutRooms,
-    pub price: PriceInfo,
+    /// Every known price from the source records. Merged duplicates may quote different
+    /// prices; the cost estimate uses the highest so the venue never looks cheaper than a source.
+    /// Empty means the price is unknown.
+    pub prices: Vec<Price>,
+    /// Why no price is known. Only set when `prices` is empty.
+    pub price_unknown_reason: Option<String>,
     pub catering: Catering,
     pub wheelchair: Accessibility,
     pub daylight: Daylight,
@@ -151,6 +168,48 @@ pub struct Venue {
     pub notes: Vec<String>,
     /// Assumptions made while normalizing, to be shown to the planner.
     pub risks: Vec<String>,
+    /// Fields where merged source records gave conflicting known values (D2, D4).
+    pub disputed: Vec<Disputed>,
+}
+
+/// A conflict between two source records. The venue keeps the worse value; `field` carries the
+/// most favourable source value so evaluation can tell when a fail is caused only by the
+/// dispute (D4), in which case the honest answer is to ask the venue, not to exclude it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Disputed {
+    pub field: DisputedField,
+    /// For the planner, e.g. "capacity: 120 vs 110".
+    pub detail: String,
+}
+
+/// The disputed field, with the best value any source gave for it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DisputedField {
+    Capacity {
+        best: u32,
+    },
+    BreakoutRooms {
+        best: u32,
+    },
+    WalkMinutes {
+        best: u32,
+    },
+    Wheelchair {
+        best: Accessibility,
+    },
+    Daylight {
+        best: Daylight,
+    },
+    Wifi {
+        best: Wifi,
+    },
+    /// The union of the listed dates, firm only if every source was firm.
+    Availability {
+        best: Availability,
+    },
+    Catering,
+    /// Not a D4 trigger: the highest price is used for the budget check anyway.
+    Price,
 }
 
 // The event is in March 2027 and March 1, 2027 is a Monday, so the weekday of a day in that
