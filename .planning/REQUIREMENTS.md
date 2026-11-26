@@ -49,7 +49,8 @@ else Shortlist. Venues are ranked by score within each bucket (ties broken by id
   - Otherwise, weekday words select the dates: tue*, thu*, "weekdays"/"mon-fri" (both days).
     "except N" removes N.
   - `tentative = true` when the text says "most", or when it does not mention March at all
-    (e.g. "Tuesdays").
+    (e.g. "Tuesdays"). "Q1" counts as mentioning March, so "fully booked Q1 2027" is a firm
+    empty set (this clarification was raised by the Phase 1 agent).
 - **N10 robustness**: each venue is deserialized on its own. A malformed record is reported as
   a warning and skipped, and never aborts the run.
 

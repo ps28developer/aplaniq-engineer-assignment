@@ -10,6 +10,7 @@ use crate::model::{
 use crate::raw::{RawCapacity, RawCount, RawFlag, RawVenue};
 
 pub const LAYOUT_RISK: &str = "capacity depends on layout";
+pub const RANGE_RISK: &str = "capacity listed as a range, upper bound used";
 
 /// A venue needs an id and a name to be reported at all; everything else may be unknown.
 pub fn normalize_venue(raw: RawVenue) -> Result<Venue, String> {
@@ -55,7 +56,13 @@ pub fn parse_capacity(raw: Option<&RawCapacity>) -> (Capacity, Option<String>) {
     match raw {
         None => (Capacity::Unknown, None),
         Some(RawCapacity::Number(n)) => (known(u32::try_from(*n).ok()), None),
-        Some(RawCapacity::Text(text)) => (known(capacity_from_text(text)), None),
+        Some(RawCapacity::Text(text)) => {
+            let capacity = known(capacity_from_text(text));
+            // The top of a range is the venue's best case, so say so instead of hiding it.
+            let risk = (capacity != Capacity::Unknown && parse_range(text.trim()).is_some())
+                .then(|| format!("{RANGE_RISK} (\"{}\")", text.trim()));
+            (capacity, risk)
+        }
         Some(RawCapacity::Layouts(layouts)) => {
             let largest = layouts
                 .values()
@@ -273,7 +280,9 @@ mod tests {
     #[test]
     fn capacity_range_uses_upper_bound() {
         let raw = RawCapacity::Text("80-120".into());
-        assert_eq!(parse_capacity(Some(&raw)), (Capacity::Known(120), None));
+        let (capacity, risk) = parse_capacity(Some(&raw));
+        assert_eq!(capacity, Capacity::Known(120));
+        assert!(risk.unwrap().starts_with(RANGE_RISK));
     }
 
     #[test]
