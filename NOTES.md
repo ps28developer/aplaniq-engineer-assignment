@@ -118,5 +118,5 @@ ones a client finds first.
   tiers (~1 h, needs a data source).
 - Send the three questions above and re-run once the client answers in January.
 
-**Time spent:** about __ h (fill in before submitting). This includes installing a Rust
-toolchain on the machine.
+**Time spent:** about 3 hours in total. This includes installing a Rust toolchain on the
+machine.
