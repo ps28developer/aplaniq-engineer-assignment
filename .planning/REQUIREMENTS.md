@@ -64,6 +64,11 @@ else Shortlist. Venues are ranked by score within each bucket (ties broken by id
   availability dates, and the *highest* price estimate (all known prices are kept, and the cost
   is the max over them).
 - **D3**: The output lists all source ids of a merged venue.
+- **D4 (added after the tech-lead dry run on the data)**: a check that *fails only because of a
+  disputed value* is downgraded to **Unknown** ("sources disagree: 110 vs 120"). Example:
+  Hotel Domzicht is v009 (capacity 120) + v010 (capacity 110). The plain worst-value merge would
+  silently exclude it for 120 people, but the honest answer is to ask the venue. A *pass* still
+  uses the worse value, so the data never makes a venue look better than its sources.
 
 ## Hard requirements (R), per headcount scenario
 - **R1 capacity** ≥ headcount.
