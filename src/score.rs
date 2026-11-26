@@ -3,7 +3,7 @@
 
 use crate::evaluate::CostEstimate;
 use crate::model::{Availability, BreakoutRooms, Daylight, Venue, WalkMinutes, Wifi};
-use crate::request::{is_mid_march, EventDay, EventRequest, PREFERRED_DAY};
+use crate::request::{is_mid_march, EventDay, EventRequest};
 
 pub const COST_MAX: f64 = 35.0;
 
@@ -131,13 +131,10 @@ fn availability_points(availability: &Availability) -> f64 {
             .iter()
             .any(|d| is_mid_march(*d) && EventDay::of(*d) == Some(day))
     };
-    let other_day = match PREFERRED_DAY {
-        EventDay::Thursday => EventDay::Tuesday,
-        EventDay::Tuesday => EventDay::Thursday,
-    };
-    if in_window(PREFERRED_DAY) {
+    // The client: "a Thursday would be ideal but Tuesday works too".
+    if in_window(EventDay::Thursday) {
         AVAILABILITY_PREFERRED_IN_WINDOW
-    } else if in_window(other_day) {
+    } else if in_window(EventDay::Tuesday) {
         AVAILABILITY_OTHER_IN_WINDOW
     } else if !dates.is_empty() {
         AVAILABILITY_OUTSIDE_WINDOW

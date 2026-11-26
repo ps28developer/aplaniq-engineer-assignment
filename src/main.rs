@@ -83,7 +83,7 @@ fn main() -> ExitCode {
             }
         })
         .collect();
-    let rankings: Vec<Vec<Evaluation>> = scenarios.iter().map(|s| s.evaluations.clone()).collect();
+    let rankings: Vec<&[Evaluation]> = scenarios.iter().map(|s| &s.evaluations[..]).collect();
     let works_for_all = shortlisted_in_all(&rankings);
     print!("{}", render(&scenarios, &works_for_all));
     ExitCode::SUCCESS

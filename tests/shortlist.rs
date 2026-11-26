@@ -83,11 +83,57 @@ fn every_venue_lands_in_the_expected_bucket() {
 
 #[test]
 fn works_for_both_80_and_120() {
-    let scenarios = [run(80), run(120)];
-    let mut ids: Vec<&str> = shortlisted_in_all(&scenarios)
+    let (at_80, at_120) = (run(80), run(120));
+    let mut ids: Vec<&str> = shortlisted_in_all(&[&at_80, &at_120])
         .iter()
         .map(|v| v.ids[0].as_str())
         .collect();
     ids.sort();
     assert_eq!(ids, WORKS_FOR_BOTH);
+}
+
+fn venue_cost_of(evaluations: &[Evaluation], ids: &[&str]) -> String {
+    let evaluation = evaluations
+        .iter()
+        .find(|e| e.venue.ids == ids)
+        .unwrap_or_else(|| panic!("no evaluation with ids {ids:?}"));
+    evaluation
+        .cost
+        .map_or("unknown".to_string(), |c| c.venue_incl_vat.to_string())
+}
+
+/// The silent-data-bug guards: each figure depends on one messy field being read correctly.
+#[test]
+fn messy_prices_become_the_right_euro_amounts() {
+    let at_80 = run(80);
+    // "7.900" is Dutch notation for 7900 excl. VAT, not 7.90.
+    assert_eq!(venue_cost_of(&at_80, &["v008"]), "€9,559.00");
+    // 80 x €95 = €7,600 is below the €10,000 minimum spend; excl. VAT, so x 1.21.
+    assert_eq!(venue_cost_of(&at_80, &["v009", "v010"]), "€12,100.00");
+    // Duplicate listings at €8,900 and €9,400: the higher one is used.
+    assert_eq!(venue_cost_of(&at_80, &["v023", "v024"]), "€11,374.00");
+    // Already incl. VAT, so it is not taxed twice.
+    assert_eq!(venue_cost_of(&at_80, &["v026"]), "€7,200.00");
+    // USD is never converted with an invented rate.
+    assert_eq!(venue_cost_of(&at_80, &["v029"]), "unknown");
+}
+
+#[test]
+fn ranking_is_deterministic_and_explainable() {
+    let first = run(80);
+    let second = run(80);
+    let order =
+        |e: &[Evaluation]| -> Vec<String> { e.iter().map(|e| e.venue.ids.join("+")).collect() };
+    assert_eq!(order(&first), order(&second));
+    for evaluation in first.iter().filter(|e| e.bucket != Bucket::Excluded) {
+        let score = evaluation.score.expect("non-excluded venues are scored");
+        assert!((0.0..=100.0).contains(&score.total()));
+    }
+    // Last year's venue (Spoorhuis, too dark and bad wifi) must never come back, even though
+    // its scraped duplicate v005 has no daylight or wifi data at all.
+    let spoorhuis = first
+        .iter()
+        .find(|e| e.venue.ids == ["v004", "v005"])
+        .unwrap();
+    assert_eq!(spoorhuis.bucket, Bucket::Excluded);
 }

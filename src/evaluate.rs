@@ -121,7 +121,7 @@ fn rank_order(a: &Evaluation, b: &Evaluation) -> Ordering {
 
 /// The venues shortlisted in every scenario, in the order of the first one. This answers the
 /// client's open headcount question.
-pub fn shortlisted_in_all(scenarios: &[Vec<Evaluation>]) -> Vec<&Venue> {
+pub fn shortlisted_in_all<'a>(scenarios: &[&'a [Evaluation]]) -> Vec<&'a Venue> {
     let Some((first, rest)) = scenarios.split_first() else {
         return Vec::new();
     };
